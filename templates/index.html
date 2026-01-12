@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Log</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f6f6f6;
+        color: #111;
+      }
+      header {
+        padding: 1.5rem;
+        background: #1f2937;
+        color: #fff;
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 1.5rem;
+      }
+      .card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+      }
+      label {
+        font-weight: 600;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.6rem;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        margin-top: 0.4rem;
+        margin-bottom: 1rem;
+        font: inherit;
+      }
+      button {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 0.6rem 1.4rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #1d4ed8;
+      }
+      img {
+        max-width: 100%;
+        border-radius: 10px;
+        margin: 0.8rem 0;
+      }
+      .comment {
+        border-left: 3px solid #e5e7eb;
+        margin-top: 0.6rem;
+        padding-left: 0.8rem;
+      }
+      .meta {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #0f172a;
+          color: #e2e8f0;
+        }
+        .card {
+          background: #111827;
+        }
+        input,
+        textarea {
+          background: #0f172a;
+          color: #e2e8f0;
+          border-color: #334155;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Local Log</h1>
+      <p>Private blog for your local network.</p>
+    </header>
+    <main>
+      <section class="card">
+        <h2>New post</h2>
+        <form action="/post" method="post" enctype="multipart/form-data">
+          <label for="title">Title</label>
+          <input id="title" name="title" required />
+
+          <label for="body">Body</label>
+          <textarea id="body" name="body" rows="4" required></textarea>
+
+          <label for="image">Photo (optional)</label>
+          <input id="image" type="file" name="image" accept="image/*" />
+
+          <button type="submit">Publish</button>
+        </form>
+      </section>
+
+      {% for post in posts %}
+      <article class="card">
+        <h2>{{ post.title }}</h2>
+        <p class="meta">Posted {{ post.created_at }}</p>
+        <p>{{ post.body }}</p>
+        {% if post.image_filename %}
+        <img src="{{ url_for('uploaded_file', filename=post.image_filename) }}" alt="Post image" />
+        {% endif %}
+
+        <section>
+          <h3>Comments</h3>
+          {% if comments_by_post.get(post.id) %}
+            {% for comment in comments_by_post[post.id] %}
+            <div class="comment">
+              <p><strong>{{ comment.author }}</strong> <span class="meta">{{ comment.created_at }}</span></p>
+              <p>{{ comment.body }}</p>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="meta">No comments yet.</p>
+          {% endif %}
+        </section>
+
+        <form action="/comment/{{ post.id }}" method="post">
+          <label for="author-{{ post.id }}">Name</label>
+          <input id="author-{{ post.id }}" name="author" placeholder="Anonymous" />
+
+          <label for="comment-{{ post.id }}">Comment</label>
+          <textarea id="comment-{{ post.id }}" name="body" rows="2" required></textarea>
+
+          <button type="submit">Add comment</button>
+        </form>
+      </article>
+      {% endfor %}
+    </main>
+  </body>
+</html>
