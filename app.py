@@ -115,13 +115,23 @@ def index() -> str:
     posts = db.execute(
         "SELECT * FROM posts ORDER BY datetime(created_at) DESC"
     ).fetchall()
+    post_dates = {
+        datetime.fromisoformat(post["created_at"]).date().isoformat()
+        for post in posts
+        if post["created_at"]
+    }
     comments = db.execute(
         "SELECT * FROM comments ORDER BY datetime(created_at) ASC"
     ).fetchall()
     comments_by_post: dict[int, list[sqlite3.Row]] = {}
     for comment in comments:
         comments_by_post.setdefault(comment["post_id"], []).append(comment)
-    return render_template("index.html", posts=posts, comments_by_post=comments_by_post)
+    return render_template(
+        "index.html",
+        posts=posts,
+        comments_by_post=comments_by_post,
+        post_dates=sorted(post_dates),
+    )
 
 
 @app.route("/post", methods=["POST"])
