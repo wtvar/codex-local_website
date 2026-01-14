@@ -7,17 +7,66 @@
     <style>
       :root {
         color-scheme: light dark;
+        --bg: #f6f6f6;
+        --text: #111;
+        --card: #fff;
+        --muted: #6b7280;
+        --border: #d1d5db;
+        --header: #1f2937;
+        --header-text: #fff;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --calendar-bg: rgba(15, 23, 42, 0.08);
+        --calendar-dot: #2563eb;
       }
       body {
         margin: 0;
         font-family: system-ui, sans-serif;
-        background: #f6f6f6;
-        color: #111;
+        background: var(--bg);
+        color: var(--text);
+      }
+      body.dark {
+        color-scheme: dark;
+        --bg: #0f172a;
+        --text: #e2e8f0;
+        --card: #111827;
+        --muted: #94a3b8;
+        --border: #334155;
+        --header: #0b1220;
+        --header-text: #e2e8f0;
+        --accent: #60a5fa;
+        --accent-hover: #3b82f6;
+        --calendar-bg: rgba(148, 163, 184, 0.12);
+        --calendar-dot: #60a5fa;
       }
       header {
         padding: 1.5rem;
-        background: #1f2937;
-        color: #fff;
+        background: var(--header);
+        color: var(--header-text);
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .topbar-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+      .ghost-button {
+        background: transparent;
+        color: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .ghost-button:hover {
+        background: rgba(255, 255, 255, 0.15);
       }
       main {
         max-width: 900px;
@@ -25,7 +74,7 @@
         padding: 1.5rem;
       }
       .card {
-        background: #fff;
+        background: var(--card);
         padding: 1.5rem;
         border-radius: 12px;
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
@@ -39,13 +88,15 @@
         width: 100%;
         padding: 0.6rem;
         border-radius: 8px;
-        border: 1px solid #d1d5db;
+        border: 1px solid var(--border);
         margin-top: 0.4rem;
         margin-bottom: 1rem;
         font: inherit;
+        background: transparent;
+        color: inherit;
       }
       button {
-        background: #2563eb;
+        background: var(--accent);
         color: #fff;
         border: none;
         border-radius: 999px;
@@ -54,7 +105,7 @@
         cursor: pointer;
       }
       button:hover {
-        background: #1d4ed8;
+        background: var(--accent-hover);
       }
       img {
         max-width: 100%;
@@ -66,31 +117,86 @@
         margin-top: 0.6rem;
         padding-left: 0.8rem;
       }
+      body.dark .comment {
+        border-left-color: #334155;
+      }
       .meta {
-        color: #6b7280;
+        color: var(--muted);
         font-size: 0.9rem;
       }
-      @media (prefers-color-scheme: dark) {
-        body {
-          background: #0f172a;
-          color: #e2e8f0;
-        }
-        .card {
-          background: #111827;
-        }
-        input,
-        textarea {
-          background: #0f172a;
-          color: #e2e8f0;
-          border-color: #334155;
-        }
+      dialog {
+        border: none;
+        border-radius: 16px;
+        padding: 0;
+        width: min(640px, 90vw);
+        background: var(--card);
+        color: inherit;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      }
+      dialog::backdrop {
+        background: rgba(15, 23, 42, 0.6);
+      }
+      .calendar-modal {
+        padding: 1.5rem;
+      }
+      .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.5rem;
+        text-align: center;
+      }
+      .calendar-day {
+        position: relative;
+        padding: 0.65rem 0.25rem;
+        border-radius: 10px;
+        background: var(--calendar-bg);
+        font-weight: 600;
+      }
+      .calendar-day.outside {
+        opacity: 0.45;
+      }
+      .calendar-day .dot {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--calendar-dot);
+        left: 50%;
+        bottom: 6px;
+        transform: translateX(-50%);
+      }
+      .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.5rem;
+        text-align: center;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin-bottom: 0.5rem;
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>Local Log</h1>
-      <p>Private blog for your local network.</p>
+      <div class="topbar">
+        <div>
+          <h1>Local Log</h1>
+          <p>Private blog for your local network.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-button" id="calendar-button" type="button">Calendar</button>
+          <button class="ghost-button" id="theme-toggle" type="button">Dark mode</button>
+        </div>
+      </div>
     </header>
     <main>
       <section class="card">
@@ -144,5 +250,109 @@
       </article>
       {% endfor %}
     </main>
+
+    <dialog id="calendar-dialog">
+      <div class="calendar-modal">
+        <div class="calendar-header">
+          <div>
+            <strong>Posting calendar</strong>
+            <p class="meta" id="calendar-month-label"></p>
+          </div>
+          <button class="ghost-button" id="close-calendar" type="button">Close</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+    </dialog>
+
+    <script>
+      const body = document.body;
+      const toggleButton = document.getElementById("theme-toggle");
+      const calendarButton = document.getElementById("calendar-button");
+      const calendarDialog = document.getElementById("calendar-dialog");
+      const closeCalendar = document.getElementById("close-calendar");
+      const monthLabel = document.getElementById("calendar-month-label");
+      const calendarGrid = document.getElementById("calendar-grid");
+      const postDates = new Set({{ post_dates | tojson }});
+
+      const storedTheme = localStorage.getItem("theme");
+      if (storedTheme === "dark") {
+        body.classList.add("dark");
+      }
+      toggleButton.textContent = body.classList.contains("dark")
+        ? "Light mode"
+        : "Dark mode";
+
+      toggleButton.addEventListener("click", () => {
+        body.classList.toggle("dark");
+        const isDark = body.classList.contains("dark");
+        toggleButton.textContent = isDark ? "Light mode" : "Dark mode";
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+      });
+
+      const buildCalendar = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startOffset = firstDay.getDay();
+        const totalDays = lastDay.getDate();
+        const totalCells = Math.ceil((startOffset + totalDays) / 7) * 7;
+        const monthFormatter = new Intl.DateTimeFormat("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+
+        monthLabel.textContent = monthFormatter.format(firstDay);
+        calendarGrid.innerHTML = "";
+
+        for (let cell = 0; cell < totalCells; cell += 1) {
+          const dayNumber = cell - startOffset + 1;
+          const cellDate = new Date(year, month, dayNumber);
+          const isOutside = dayNumber < 1 || dayNumber > totalDays;
+          const dayEl = document.createElement("div");
+          dayEl.className = `calendar-day${isOutside ? " outside" : ""}`;
+          dayEl.textContent = cellDate.getDate();
+
+          if (!isOutside) {
+            const isoDate = cellDate.toISOString().slice(0, 10);
+            if (postDates.has(isoDate)) {
+              const dot = document.createElement("span");
+              dot.className = "dot";
+              dayEl.appendChild(dot);
+            }
+          }
+          calendarGrid.appendChild(dayEl);
+        }
+      };
+
+      calendarButton.addEventListener("click", () => {
+        buildCalendar();
+        if (typeof calendarDialog.showModal === "function") {
+          calendarDialog.showModal();
+        } else {
+          calendarDialog.setAttribute("open", "open");
+        }
+      });
+
+      closeCalendar.addEventListener("click", () => {
+        calendarDialog.close();
+      });
+
+      calendarDialog.addEventListener("click", (event) => {
+        if (event.target === calendarDialog) {
+          calendarDialog.close();
+        }
+      });
+    </script>
   </body>
 </html>
