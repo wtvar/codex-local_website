@@ -112,16 +112,43 @@ def allowed_file(filename: str) -> bool:
 @app.route("/")
 def index() -> str:
     db = get_db()
-    posts = db.execute(
-        "SELECT * FROM posts ORDER BY datetime(created_at) DESC"
-    ).fetchall()
-    comments = db.execute(
-        "SELECT * FROM comments ORDER BY datetime(created_at) ASC"
-    ).fetchall()
+    selected_date = request.args.get("date")
+    if selected_date:
+        posts = db.execute(
+            "SELECT * FROM posts WHERE date(created_at) = ? ORDER BY datetime(created_at) DESC",
+            (selected_date,),
+        ).fetchall()
+    else:
+        posts = db.execute(
+            "SELECT * FROM posts ORDER BY datetime(created_at) DESC"
+        ).fetchall()
+
+    post_dates = {
+        row["post_date"]
+        for row in db.execute(
+            "SELECT DISTINCT date(created_at) AS post_date FROM posts ORDER BY post_date"
+        ).fetchall()
+        if row["post_date"]
+    }
+
     comments_by_post: dict[int, list[sqlite3.Row]] = {}
-    for comment in comments:
-        comments_by_post.setdefault(comment["post_id"], []).append(comment)
-    return render_template("index.html", posts=posts, comments_by_post=comments_by_post)
+    post_ids = [post["id"] for post in posts]
+    if post_ids:
+        placeholders = ",".join("?" for _ in post_ids)
+        comments = db.execute(
+            f"SELECT * FROM comments WHERE post_id IN ({placeholders}) ORDER BY datetime(created_at) ASC",
+            post_ids,
+        ).fetchall()
+        for comment in comments:
+            comments_by_post.setdefault(comment["post_id"], []).append(comment)
+
+    return render_template(
+        "index.html",
+        posts=posts,
+        comments_by_post=comments_by_post,
+        post_dates=sorted(post_dates),
+        selected_date=selected_date,
+    )
 
 
 @app.route("/post", methods=["POST"])
@@ -165,6 +192,27 @@ def add_comment(post_id: int) -> str:
         (post_id, author, body, datetime.utcnow().isoformat(timespec="seconds")),
     )
     db.commit()
+    return redirect(url_for("index"))
+
+
+@app.route("/post/<int:post_id>/delete", methods=["POST"])
+def delete_post(post_id: int) -> str:
+    db = get_db()
+    post = db.execute(
+        "SELECT image_filename FROM posts WHERE id = ?", (post_id,)
+    ).fetchone()
+    if not post:
+        abort(404)
+
+    db.execute("DELETE FROM comments WHERE post_id = ?", (post_id,))
+    db.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+    db.commit()
+
+    if post["image_filename"]:
+        image_path = UPLOAD_DIR / post["image_filename"]
+        if image_path.exists():
+            image_path.unlink()
+
     return redirect(url_for("index"))
 
 
